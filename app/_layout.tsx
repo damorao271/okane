@@ -3,10 +3,14 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import 'react-native-reanimated';
 
 import '../global.css';
 
+import { db } from '@/db/client';
+import migrations from '@/db/migrations/migrations';
+import { seedDatabase } from '@/db/seed';
 import { useColorScheme } from '@/components/useColorScheme';
 
 export {
@@ -26,6 +30,7 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  const { success: migrationsReady, error: migrationError } = useMigrations(db, migrations);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -33,12 +38,22 @@ export default function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
+    if (migrationError) throw migrationError;
+  }, [migrationError]);
+
+  useEffect(() => {
+    if (migrationsReady) {
+      seedDatabase();
+    }
+  }, [migrationsReady]);
+
+  useEffect(() => {
+    if (loaded && migrationsReady) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [loaded, migrationsReady]);
 
-  if (!loaded) {
+  if (!loaded || !migrationsReady) {
     return null;
   }
 

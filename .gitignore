@@ -31,7 +31,15 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.*
 .env*.local
+
+# local database files
+*.db
+
+# local editor / agent config
+.claude/launch.json
 
 # typescript
 *.tsbuildinfo
