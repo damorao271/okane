@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "./client";
-import { categories, currencies } from "./schema";
+import { categories, currencies, exchangeRates } from "./schema";
 
 // Fixed (not random) UUIDs for the well-known default currencies, so every fresh
 // install — and a future sync server — agree on the same ids for these rows.
@@ -37,6 +37,42 @@ const DEFAULT_CURRENCIES = [
     decimals: 2,
     isCrypto: true,
     sortOrder: 2,
+  },
+];
+
+// Static placeholder rates (Bs per $1) until a settings screen lets the user
+// update them. rateScaled = USD cents per 1 unit of the base currency.
+const RATE_SCALE = 1_000_000;
+const bsPerUsdToRateScaled = (bsPerUsd: number) => Math.round((100 / bsPerUsd) * RATE_SCALE);
+
+const DEFAULT_EXCHANGE_RATES = [
+  {
+    baseCurrencyId: DEFAULT_CURRENCY_IDS.VES,
+    quoteCurrencyId: DEFAULT_CURRENCY_IDS.USD,
+    rateType: "bcv" as const,
+    rateScaled: bsPerUsdToRateScaled(700),
+    source: "seed:static",
+  },
+  {
+    baseCurrencyId: DEFAULT_CURRENCY_IDS.VES,
+    quoteCurrencyId: DEFAULT_CURRENCY_IDS.USD,
+    rateType: "parallel" as const,
+    rateScaled: bsPerUsdToRateScaled(800),
+    source: "seed:static",
+  },
+  {
+    baseCurrencyId: DEFAULT_CURRENCY_IDS.VES,
+    quoteCurrencyId: DEFAULT_CURRENCY_IDS.USD,
+    rateType: "manual" as const,
+    rateScaled: bsPerUsdToRateScaled(1000),
+    source: "seed:static",
+  },
+  {
+    baseCurrencyId: DEFAULT_CURRENCY_IDS.USDT,
+    quoteCurrencyId: DEFAULT_CURRENCY_IDS.USD,
+    rateType: "manual" as const,
+    rateScaled: 100 * RATE_SCALE, // 1 USDT = 1 USD = 100 cents
+    source: "seed:stablecoin",
   },
 ];
 
@@ -89,7 +125,27 @@ async function seedCategories() {
   }
 }
 
+async function seedExchangeRates() {
+  for (const rate of DEFAULT_EXCHANGE_RATES) {
+    const existing = await db.query.exchangeRates.findFirst({
+      where: and(
+        eq(exchangeRates.baseCurrencyId, rate.baseCurrencyId),
+        eq(exchangeRates.quoteCurrencyId, rate.quoteCurrencyId),
+        eq(exchangeRates.rateType, rate.rateType)
+      ),
+    });
+    if (!existing) {
+      await db.insert(exchangeRates).values({
+        ...rate,
+        rateScale: RATE_SCALE,
+        effectiveAt: Date.now(),
+      });
+    }
+  }
+}
+
 export async function seedDatabase() {
   await seedCurrencies();
   await seedCategories();
+  await seedExchangeRates();
 }

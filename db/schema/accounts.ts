@@ -3,12 +3,16 @@ import { idCol, syncCols } from "./_shared";
 import { currencies } from "./currencies";
 
 export const accountTypeValues = ["cash", "bank", "crypto_wallet", "other"] as const;
+export type AccountType = (typeof accountTypeValues)[number];
 
 export const accounts = sqliteTable(
   "accounts",
   {
     id: idCol(),
     name: text("name").notNull(),
+    // optional free-text tag shown alongside the name (e.g. "familiar"), independent
+    // of the institution/name — not used for icon/favicon lookup.
+    label: text("label"),
     type: text("type", { enum: accountTypeValues }).notNull().default("cash"),
     currencyId: text("currency_id")
       .notNull()
