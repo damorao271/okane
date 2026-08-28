@@ -1,17 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { ACCOUNT_ICON_GROUPS } from "@/lib/accountIcons";
+import { ICON_GROUPS } from "@/lib/iconCatalog";
 
 type IconPickerProps = {
   value: string;
   onChange: (icon: string) => void;
   color: string;
+  groups?: { title: string; icons: string[] }[];
 };
 
-export function IconPicker({ value, onChange, color }: IconPickerProps) {
+export function IconPicker({ value, onChange, color, groups = ICON_GROUPS }: IconPickerProps) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-5">
-      {ACCOUNT_ICON_GROUPS.map((group) => (
+      {groups.map((group) => (
         <View key={group.title} className="w-44 gap-2">
           <Text className="text-sm font-semibold text-white/60">{group.title}</Text>
           <View className="flex-row flex-wrap gap-2">

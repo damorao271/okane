@@ -11,6 +11,7 @@ import '../global.css';
 import { db } from '@/db/client';
 import migrations from '@/db/migrations/migrations';
 import { seedDatabase } from '@/db/seed';
+import { registerRatesBackgroundTask } from '@/lib/rates/backgroundTask';
 import { useColorScheme } from '@/components/useColorScheme';
 
 export {
@@ -44,6 +45,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (migrationsReady) {
       seedDatabase();
+      registerRatesBackgroundTask();
     }
   }, [migrationsReady]);
 
@@ -68,6 +70,8 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="accounts" options={{ headerShown: false }} />
+        <Stack.Screen name="categories" options={{ headerShown: false }} />
+        <Stack.Screen name="rates" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>

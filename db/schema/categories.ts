@@ -2,6 +2,7 @@ import { integer, type AnySQLiteColumn, index, sqliteTable, text } from "drizzle
 import { idCol, syncCols } from "./_shared";
 
 export const categoryTypeValues = ["expense", "income"] as const;
+export type CategoryType = (typeof categoryTypeValues)[number];
 
 export const categories = sqliteTable(
   "categories",

@@ -41,7 +41,10 @@ const NEUTRAL_COLOR = "#6b7280";
 
 export function AccountForm({ mode, initialValues, onSubmit, submitting }: AccountFormProps) {
   const { data: currencies } = useCurrencies();
-  const foreignCurrencies = currencies.filter((c) => c.id !== DEFAULT_CURRENCY_IDS.VES);
+  // EUR is informational-only (BCV rate display) — no accounts can be created in it.
+  const foreignCurrencies = currencies.filter(
+    (c) => c.id !== DEFAULT_CURRENCY_IDS.VES && c.id !== DEFAULT_CURRENCY_IDS.EUR
+  );
 
   const [currencyMode, setCurrencyMode] = useState<"nacional" | "internacional">(
     initialValues?.currencyId && initialValues.currencyId !== DEFAULT_CURRENCY_IDS.VES

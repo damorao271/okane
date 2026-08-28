@@ -2,6 +2,7 @@ import { Card } from '@/components/ui/Card'
 import { useAccounts } from '@/db/queries/accounts'
 import {
   pickLatestUsdRate,
+  refreshExchangeRates,
   useCurrencies,
   useExchangeRates,
 } from '@/db/queries/currencies'
@@ -10,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const HIDDEN_BALANCE = '••••••'
@@ -29,6 +30,7 @@ export default function HomeScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const [balancesVisible, setBalancesVisible] = useState(true)
+  const [refreshingRates, setRefreshingRates] = useState(false)
   const { data: accounts } = useAccounts()
   const { data: currencies } = useCurrencies()
   const { data: rates } = useExchangeRates()
@@ -55,6 +57,15 @@ export default function HomeScreen() {
     })
     .sort((a, b) => (a.currency?.sortOrder ?? 0) - (b.currency?.sortOrder ?? 0))
 
+  async function handleRefreshRates() {
+    setRefreshingRates(true)
+    try {
+      await refreshExchangeRates()
+    } finally {
+      setRefreshingRates(false)
+    }
+  }
+
   return (
     <View className="flex-1 bg-black">
       <LinearGradient
@@ -69,21 +80,36 @@ export default function HomeScreen() {
         }}
       >
         <Card className="p-4">
-          <View className="mb-1 flex-row items-center gap-1.5">
-            <Text className="text-sm text-white/60">Mi Balance</Text>
+          <View className="mb-1 flex-row items-center justify-between">
+            <View className="flex-row items-center gap-1.5">
+              <Text className="text-sm text-white/60">Mi Balance</Text>
+              <Pressable
+                onPress={() => setBalancesVisible((visible) => !visible)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  balancesVisible ? 'Ocultar balances' : 'Mostrar balances'
+                }
+              >
+                <Ionicons
+                  name={balancesVisible ? 'eye-outline' : 'eye-off-outline'}
+                  size={16}
+                  color="rgba(255,255,255,0.6)"
+                />
+              </Pressable>
+            </View>
             <Pressable
-              onPress={() => setBalancesVisible((visible) => !visible)}
+              onPress={handleRefreshRates}
+              disabled={refreshingRates}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel={
-                balancesVisible ? 'Ocultar balances' : 'Mostrar balances'
-              }
+              accessibilityLabel="Actualizar tasas"
             >
-              <Ionicons
-                name={balancesVisible ? 'eye-outline' : 'eye-off-outline'}
-                size={16}
-                color="rgba(255,255,255,0.6)"
-              />
+              {refreshingRates ? (
+                <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+              ) : (
+                <Ionicons name="refresh-outline" size={16} color="rgba(255,255,255,0.6)" />
+              )}
             </Pressable>
           </View>
           <Text className="text-4xl font-bold text-white">
@@ -124,11 +150,26 @@ export default function HomeScreen() {
           )}
         </View>
 
+        <View className="mt-6 flex-row gap-3">
+          <Pressable
+            onPress={() => router.push('/accounts')}
+            className="flex-1 items-center rounded-full bg-lime-400 py-4"
+          >
+            <Text className="font-bold text-black">Ver cuentas</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/categories')}
+            className="flex-1 items-center rounded-full bg-white/10 py-4"
+          >
+            <Text className="font-bold text-white">Categorías</Text>
+          </Pressable>
+        </View>
+
         <Pressable
-          onPress={() => router.push('/accounts')}
-          className="mt-6 items-center rounded-full bg-lime-400 py-4"
+          onPress={() => router.push('/rates')}
+          className="mt-3 items-center rounded-full bg-white/10 py-4"
         >
-          <Text className="font-bold text-black">Ver cuentas</Text>
+          <Text className="font-bold text-white">Tasas de cambio</Text>
         </Pressable>
       </ScrollView>
     </View>
