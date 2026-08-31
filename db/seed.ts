@@ -416,8 +416,103 @@ async function seedExchangeRates() {
   }
 }
 
+// One-off historical backfill (Aug 18–27 2026) transcribed from BCV/Binance
+// P2P screenshots the user provided, so the "Histórico" chart has real data
+// to plot instead of a single placeholder point. Guarded by a unique
+// `source` tag so — like the rest of this file — it only ever inserts once.
+const HISTORICAL_BACKFILL_SOURCE = 'seed:historical-2026-08'
+const HISTORICAL_YEAR = 2026
+const HISTORICAL_MONTH_INDEX = 7 // August
+
+const HISTORICAL_BCV_USD_VES = [
+  { day: 18, bsPerUsd: 773.31 },
+  { day: 19, bsPerUsd: 775.34 },
+  { day: 20, bsPerUsd: 777.42 },
+  { day: 21, bsPerUsd: 779.95 },
+  { day: 24, bsPerUsd: 784.66 },
+  { day: 25, bsPerUsd: 785.07 },
+  { day: 26, bsPerUsd: 787.52 },
+  { day: 27, bsPerUsd: 791.32 },
+]
+
+const HISTORICAL_BCV_EUR_VES = [
+  { day: 18, bsPerEur: 896.03 },
+  { day: 19, bsPerEur: 897.82 },
+  { day: 20, bsPerEur: 906.83 },
+  { day: 21, bsPerEur: 911.22 },
+  { day: 24, bsPerEur: 916.01 },
+  { day: 25, bsPerEur: 916.03 },
+  { day: 26, bsPerEur: 919.15 },
+  { day: 27, bsPerEur: 921.81 },
+]
+
+const HISTORICAL_PARALLEL_USDT_VES = [
+  { day: 20, bsPerUsdt: 918.19 },
+  { day: 21, bsPerUsdt: 919.5 },
+  { day: 22, bsPerUsdt: 919.05 },
+  { day: 23, bsPerUsdt: 919.51 },
+  { day: 24, bsPerUsdt: 926.56 },
+  { day: 25, bsPerUsdt: 943.0 },
+  { day: 26, bsPerUsdt: 953.0 },
+  { day: 27, bsPerUsdt: 940.0 },
+]
+
+const HISTORICAL_LAST_DAY = 27
+
+// Days land at noon, except the most recent day, which lands at 23:59:59 —
+// later than the `DEFAULT_EXCHANGE_RATES` seed above (timestamped with the
+// real `Date.now()` from whenever the app first ran, always earlier the same
+// calendar day), so this real data — not the 700/800 placeholders — wins as
+// "today's" rate in `useRateVariation`/`useRateHistory`'s latest-by-day pick.
+function historicalTimestamp(day: number): number {
+  if (day === HISTORICAL_LAST_DAY) {
+    return new Date(HISTORICAL_YEAR, HISTORICAL_MONTH_INDEX, day, 23, 59, 59).getTime()
+  }
+  return new Date(HISTORICAL_YEAR, HISTORICAL_MONTH_INDEX, day, 12, 0, 0).getTime()
+}
+
+async function seedHistoricalRates() {
+  const alreadySeeded = await db.query.exchangeRates.findFirst({
+    where: eq(exchangeRates.source, HISTORICAL_BACKFILL_SOURCE),
+  })
+  if (alreadySeeded) return
+
+  const rows = [
+    ...HISTORICAL_BCV_USD_VES.map(({ day, bsPerUsd }) => ({
+      baseCurrencyId: DEFAULT_CURRENCY_IDS.VES,
+      quoteCurrencyId: DEFAULT_CURRENCY_IDS.USD,
+      rateType: 'bcv' as const,
+      rateScaled: bsPerUsdToRateScaled(bsPerUsd),
+      rateScale: RATE_SCALE,
+      effectiveAt: historicalTimestamp(day),
+      source: HISTORICAL_BACKFILL_SOURCE,
+    })),
+    ...HISTORICAL_BCV_EUR_VES.map(({ day, bsPerEur }) => ({
+      baseCurrencyId: DEFAULT_CURRENCY_IDS.EUR,
+      quoteCurrencyId: DEFAULT_CURRENCY_IDS.VES,
+      rateType: 'bcv' as const,
+      rateScaled: Math.round(bsPerEur * 100 * RATE_SCALE),
+      rateScale: RATE_SCALE,
+      effectiveAt: historicalTimestamp(day),
+      source: HISTORICAL_BACKFILL_SOURCE,
+    })),
+    ...HISTORICAL_PARALLEL_USDT_VES.map(({ day, bsPerUsdt }) => ({
+      baseCurrencyId: DEFAULT_CURRENCY_IDS.VES,
+      quoteCurrencyId: DEFAULT_CURRENCY_IDS.USD,
+      rateType: 'parallel' as const,
+      rateScaled: bsPerUsdToRateScaled(bsPerUsdt),
+      rateScale: RATE_SCALE,
+      effectiveAt: historicalTimestamp(day),
+      source: HISTORICAL_BACKFILL_SOURCE,
+    })),
+  ]
+
+  await db.insert(exchangeRates).values(rows)
+}
+
 export async function seedDatabase() {
   await seedCurrencies()
   await seedCategories()
   await seedExchangeRates()
+  await seedHistoricalRates()
 }

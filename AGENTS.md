@@ -22,7 +22,7 @@ repo owner's own use, not to be sold/distributed — local-first, no backend, no
 - `db/schema/*.ts` — 13 tables: currencies, exchange_rates, accounts, categories, transactions,
   budgets, savings_goals, goal_contributions, contacts, debts, debt_payments, shopping_lists,
   shopping_list_items. Only **currencies, accounts, transactions** have real UI built so far
-  (see "What's implemented" below) — the rest of the schema exists but has no screens yet.
+  (see "What's implemented" below) — the rest of the schema exists but has no sc reens yet.
 - `db/schema/_shared.ts` — `idCol()` (UUID text PK, generated with a plain-JS uuidv4, not
   `expo-crypto` — that package broke `drizzle-kit generate` because it pulls in `react-native`
   and esbuild chokes on it; don't reintroduce a native-module import inside `db/schema/*.ts`,
@@ -34,8 +34,9 @@ repo owner's own use, not to be sold/distributed — local-first, no backend, no
 - **Money**: always integer minor units (`amountMinor`, e.g. céntimos), never `real`/float.
 - **Exchange rates**: `exchange_rates` is append-only (never mutate a rate row), keyed by
   `(baseCurrencyId, quoteCurrencyId, rateType, effectiveAt)`. `rateType` is `bcv` | `parallel` |
-  `manual`; when converting, prefer `manual` > `parallel` > `bcv` (see
-  `pickLatestUsdRate` in `db/queries/currencies.ts`). `rateScaled`/`rateScale` is fixed-point
+  `manual`; when converting, the most recently recorded row (any `rateType`) wins — ties on
+  `effectiveAt` fall back to `manual` > `parallel` > `bcv` (see `pickLatestUsdRate` in
+  `db/queries/currencies.ts`). `rateScaled`/`rateScale` is fixed-point
   (quote-currency minor units per 1 base-currency major unit) to avoid float drift.
   `db/seed.ts` seeds **static placeholder rates** (VES→USD: bcv 700, parallel 800, manual 1000;
   USDT→USD 1:1) — these are not live/fetched, replace with a real rate-fetching feature later.
@@ -61,7 +62,7 @@ CRUD** (`app/categories/*`) exist. Transactions, budgets, goals, debts, and shop
 schema but no screens — don't assume a UI exists for them.
 
 - **Every top-level route folder under `app/` needs a `<Stack.Screen name="..." options={{
-  headerShown: false }} />` entry in the root `app/_layout.tsx`'s `<Stack>`** (alongside
+headerShown: false }} />` entry in the root `app/_layout.tsx`'s `<Stack>`** (alongside
   `(tabs)`, `accounts`, `categories`). Each screen already draws its own header row (back arrow +
   title + action), so skipping this registration doesn't remove the native header — it just
   falls back to expo-router's default native-stack header, which stacks a second, OS-native

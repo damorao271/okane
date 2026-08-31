@@ -98,19 +98,29 @@ export default function HomeScreen() {
                 />
               </Pressable>
             </View>
-            <Pressable
-              onPress={handleRefreshRates}
-              disabled={refreshingRates}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Actualizar tasas"
-            >
-              {refreshingRates ? (
-                <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
-              ) : (
-                <Ionicons name="refresh-outline" size={16} color="rgba(255,255,255,0.6)" />
-              )}
-            </Pressable>
+            <View className="flex-row items-center gap-3">
+              <Pressable
+                onPress={() => router.push('/calculadora')}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Calculadora"
+              >
+                <Ionicons name="calculator-outline" size={16} color="rgba(255,255,255,0.6)" />
+              </Pressable>
+              <Pressable
+                onPress={handleRefreshRates}
+                disabled={refreshingRates}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Actualizar tasas"
+              >
+                {refreshingRates ? (
+                  <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+                ) : (
+                  <Ionicons name="refresh-outline" size={16} color="rgba(255,255,255,0.6)" />
+                )}
+              </Pressable>
+            </View>
           </View>
           <Text className="text-4xl font-bold text-white">
             {balancesVisible

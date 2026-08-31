@@ -72,6 +72,7 @@ function RootLayoutNav() {
         <Stack.Screen name="accounts" options={{ headerShown: false }} />
         <Stack.Screen name="categories" options={{ headerShown: false }} />
         <Stack.Screen name="rates" options={{ headerShown: false }} />
+        <Stack.Screen name="calculadora" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
